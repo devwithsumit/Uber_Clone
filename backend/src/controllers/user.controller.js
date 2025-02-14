@@ -1,7 +1,8 @@
 const { validationResult } = require('express-validator')
 const UserService = require("../services/user.service");
 const userModel = require("../models/user.model");
-const { succesResponse, errorResponse } = require("../utils/responseHandler");
+const { successResponse, errorResponse } = require("../utils/responseHandler");
+const blackListModel = require('../models/blackList.model');
 
 
 exports.registerUser = async (req, res, next) => {
@@ -30,10 +31,10 @@ exports.registerUser = async (req, res, next) => {
 
         const token = user.generateAuthToken();
 
-        // res.status(201).json({ user, token });
-        return succesResponse(res, 201, "User registered successfully", {
-            user,
-            token
+        // res.status(200).json({ user, token });
+        return successResponse(res, 200, "User registered successfully", {
+            token,
+            user
         })
     } catch (error) {
         // res.status(400).json("error: " + error);
@@ -64,9 +65,9 @@ exports.loginUser = async (req, res, next) => {
         //set cookie
         res.cookie('token', token);
 
-        return succesResponse(res, 200, "Login Successful", {
-            user,
-            token
+        return successResponse(res, 200, "Login Successful", {
+            token,
+            user
         })
     } catch (error) {
         return errorResponse(res, 401, "Error in login user: " + error);
@@ -75,11 +76,19 @@ exports.loginUser = async (req, res, next) => {
 
 exports.userProfile = async (req, res, next) => {
     try {
-
-        // console.log(req.user);
-
-        return succesResponse(res, 201, "Profile fetched ", req.user);
+        return successResponse(res, 200, "Profile fetched successfully", req.user);
     } catch (error) {
         return errorResponse(res, 401, "Error fetching profile", error);
     }
+}
+
+exports.logoutUser = async (req, res, next) => {
+    // if in the auth.js not find the token in database then get the token and add it in database
+
+    const token = req.cookies.token || req.headers.authorization?.split(" ")[1];
+    const blackList = await blackListModel.create({
+        token,
+    })
+    res.clearCookie('token');
+    successResponse(res, 200, "logout sucessful");
 }
